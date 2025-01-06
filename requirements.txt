@@ -1,0 +1,6 @@
+PyPDF2
+pandas
+reportlab
+svglib
+chardet
+fpdf
