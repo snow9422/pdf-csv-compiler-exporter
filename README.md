@@ -1,12 +1,12 @@
 # PDF CSV Compiler
 
-This script reads a PDF file, extracts its content, reads data from a CSV file, and outputs a new PDF with the combined data and a logo.
+This script reads a PDF file, extracts its content, reads data from a CSV file, and outputs a new PDF with the combined data and a logo, while preserving the original PDF's style.
 
 ## Requirements
 
 Ensure you have the required libraries installed:
 ```sh
-pip install PyPDF2 pandas reportlab svglib chardet
+pip install -r requirements.txt
 ```
 
 ## Usage
@@ -22,10 +22,9 @@ This will generate a new PDF file named `output.pdf` with the content from the i
 
 ## Script Details
 
-- `extract_text_from_pdf(pdf_path)`: Extracts all text content from the PDF.
 - `read_csv_data(csv_path)`: Reads data from the CSV file with proper encoding detection and data cleaning.
 - `add_svg_logo(pdf, svg_path, x=20, y=20, width=50)`: Adds the SVG logo to the PDF.
-- `create_pdf_with_data(output_pdf_path, text_content, data)`: Creates a new PDF with the extracted text content, CSV data, and logo.
+- `create_pdf_with_data(output_pdf_path, input_pdf_path, data)`: Creates a new PDF with the original PDF content, CSV data, and logo.
 
 ## Example
 
@@ -53,3 +52,4 @@ python pdf_csv_compiler.py
 - The script automatically detects the encoding of the CSV file using `chardet`.
 - The script cleans up the CSV data by replacing `--` with `NA` and converting date, amount, and balance columns to appropriate formats.
 - The logo is added at the top of the output PDF, followed by the content from the input PDF and the transaction data from the CSV file.
+- The original PDF's style is preserved in the output PDF.
