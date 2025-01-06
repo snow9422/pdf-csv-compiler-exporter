@@ -13,18 +13,6 @@ def detect_encoding(file_path):
         raw_data = file.read()
     return chardet.detect(raw_data)['encoding']
 
-def extract_text_from_pdf(pdf_path):
-    text_content = []
-    try:
-        with open(pdf_path, "rb") as file:
-            reader = PyPDF2.PdfReader(file)
-            for page_num in range(len(reader.pages)):
-                page = reader.pages[page_num]
-                text_content.extend(page.extract_text().split('\n'))
-    except Exception as e:
-        print(f"Warning: Error processing PDF: {str(e)}")
-    return text_content
-
 def read_csv_data(csv_path):
     try:
         # Detect the file encoding
@@ -72,7 +60,20 @@ def add_svg_logo(pdf, svg_path, x=20, y=20, width=50):
         print(f"Warning: Could not add logo: {str(e)}")
         return y
 
-def create_pdf_with_data(output_pdf_path, text_content, data):
+def create_pdf_with_data(output_pdf_path, input_pdf_path, data):
+    # Create a PDF writer
+    pdf_writer = PyPDF2.PdfWriter()
+    
+    # Read the input PDF
+    with open(input_pdf_path, "rb") as input_pdf_file:
+        pdf_reader = PyPDF2.PdfReader(input_pdf_file)
+        
+        # Copy all pages from the input PDF to the writer
+        for page_num in range(len(pdf_reader.pages)):
+            pdf_writer.add_page(pdf_reader.pages[page_num])
+    
+    # Create a temporary PDF with the new content
+    temp_pdf_path = "temp_output.pdf"
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=10)
@@ -84,17 +85,8 @@ def create_pdf_with_data(output_pdf_path, text_content, data):
     logo_path = "found_logo.svg"
     current_y = add_svg_logo(pdf, logo_path)
     
-    # Add original text content with adjusted y position
-    if text_content:
-        pdf.set_y(current_y)
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, txt="Original PDF Content:", ln=True)
-        pdf.set_font("Arial", size=10)
-        for line in text_content:
-            if line.strip():
-                pdf.cell(0, 10, txt=line.strip(), ln=True)
-    
     # Add a separator
+    pdf.set_y(current_y)
     pdf.ln(10)
     pdf.line(20, pdf.get_y(), 190, pdf.get_y())
     pdf.ln(10)
@@ -135,22 +127,31 @@ def create_pdf_with_data(output_pdf_path, text_content, data):
             print(f"Warning: Could not process row {index}: {str(e)}")
             continue
     
-    try:
-        pdf.output(output_pdf_path)
-        print(f"PDF successfully created at {output_pdf_path}")  # Debug print
-    except Exception as e:
-        print(f"Error creating PDF: {str(e)}")
-        raise
+    pdf.output(temp_pdf_path)
+    
+    # Merge the original PDF and the new content
+    with open(temp_pdf_path, "rb") as temp_pdf_file:
+        temp_pdf_reader = PyPDF2.PdfReader(temp_pdf_file)
+        for page_num in range(len(temp_pdf_reader.pages)):
+            pdf_writer.add_page(temp_pdf_reader.pages[page_num])
+    
+    # Write the final PDF
+    with open(output_pdf_path, "wb") as output_pdf_file:
+        pdf_writer.write(output_pdf_file)
+    
+    # Remove the temporary PDF file
+    os.remove(temp_pdf_path)
+    
+    print(f"PDF successfully created at {output_pdf_path}")
 
 def main():
-    pdf_path = "input.pdf"
+    input_pdf_path = "input.pdf"
     csv_path = "data.csv"
     output_pdf_path = "output.pdf"
 
     try:
-        text_content = extract_text_from_pdf(pdf_path)
         data = read_csv_data(csv_path)
-        create_pdf_with_data(output_pdf_path, text_content, data)
+        create_pdf_with_data(output_pdf_path, input_pdf_path, data)
         print("PDF successfully created!")
     except Exception as e:
         print(f"Error: {str(e)}")
